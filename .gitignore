@@ -1,5 +1,31 @@
-venv/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.sqlite3
+*.log
+
+# Virtual environment
+venv/
+env/
+
+# Django stuff:
+*.pyc
+db.sqlite3
+*.pot
+*.py~
+
+# IDEs/editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+*.orig
+
+# Env files (if using)
 .env
