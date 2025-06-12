@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     #third party
 
     #mine
+    'pages',
     'activities',
 ]
 
@@ -59,7 +60,7 @@ ROOT_URLCONF = 'sportsfinder.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR /'sportsfinder'/ 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
