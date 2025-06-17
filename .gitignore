@@ -28,4 +28,5 @@ Thumbs.db
 *.orig
 
 # Env files (if using)
-.env
+.envvenv/
+*.sqlite3
