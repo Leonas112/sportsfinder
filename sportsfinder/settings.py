@@ -39,6 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     #third party
+    'tailwind',
+    'theme',
+    
+    
 
     #mine
     'pages',
@@ -57,6 +61,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'sportsfinder.urls'
+
+TAILWIND_APP_NAME = 'theme'
 
 TEMPLATES = [
     {
