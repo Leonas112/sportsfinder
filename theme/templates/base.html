@@ -43,15 +43,15 @@
           <div class="flex space-x-4">
             <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
             <a href="#" class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" aria-current="page">Dashboard</a>
-            <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Team</a>
-            <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Projects</a>
+            <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Find classes & appointments</a>
+            <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Plans</a>
             {% if user.is_authenticated %}
               <a href="{%url 'logout'%}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Sign Out</a>
             
             {% else %}
               <a href="{%url 'login'%}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Sign In</a>
 
-              <a href="{%url 'register'%}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Register</a>
+              <a href="{%url 'register'%}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Get Started</a>
             {% endif %}
           </div>
         </div>
@@ -113,7 +113,9 @@
 
 
 <body class="bg-gray-50 font-serif leading-normal tracking-normal">
-    <div class="container mx-auto">
+    <div class="{% block layout_wrapper %}container mx-auto{% endblock %}">
+      {% block content %}
+      {% endblock %}
 		{%if messages%}
 			{%for message in messages%}
 
@@ -140,7 +142,7 @@
 
 		
 
-        {% block content %}
+        {% block contentas %}
         <!-- Default content if no child block overrides -->
         <section class="flex items-center justify-center h-screen">
             <h1 class="text-5xl">Django + Tailwind = ❤️</h1>

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'pages',
     'activities',
     'accounts',
+    'catalog'
 ]
 
 MIDDLEWARE = [

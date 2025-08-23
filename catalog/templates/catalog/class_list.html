@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="max-w-6xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-extrabold text-slate-900 mb-6">Classes</h1>
+
+  <!-- Filters -->
+  <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-8">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search (yoga, HIIT…)"
+           class="border rounded px-3 py-2 w-full">
+
+    <select name="tag" class="border rounded px-3 py-2 w-full">
+      <option value="">All tags</option>
+      {% for t in all_tags %}
+        <option value="{{ t.slug }}" {% if tag == t.slug %}selected{% endif %}>{{ t.title }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="city" class="border rounded px-3 py-2 w-full">
+      <option value="">All cities</option>
+      {% for c in all_cities %}
+        <option value="{{ c }}" {% if city == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+
+    <input type="date" name="date" value="{{ date }}" class="border rounded px-3 py-2 w-full">
+
+    <button class="bg-sky-600 text-white rounded px-4 py-2">Filter</button>
+  </form>
+
+  <!-- Results -->
+  {% if cards %}
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {% for c, next in cards %}
+        <a href="{% url 'catalog:class_detail' slug=c.slug %}"
+           class="block rounded-xl border hover:shadow-md transition p-5 bg-white">
+          <h3 class="font-bold text-xl">{{ c.title }}</h3>
+          <p class="text-sm text-slate-600 mt-1">
+            {{ c.location.city }}{% if c.location.address1 %}, {{ c.location.address1 }}{% endif %}
+            {% if c.coach %} • Coach: {{ c.coach.name }}{% endif %}
+          </p>
+
+          {% if c.tags.all %}
+            <div class="flex flex-wrap gap-2 mt-3">
+              {% for t in c.tags.all %}
+                <span class="text-xs bg-slate-100 px-2 py-1 rounded">{{ t.title }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% if next %}
+            <div class="mt-4">
+              <p class="text-xs uppercase text-slate-500 tracking-wide">Next times</p>
+              <ul class="text-sm text-slate-800 space-y-1 mt-1">
+                {% for d in next %}
+                  <li>{{ d|date:"D, M j" }} at {{ d|time:"H:i" }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        </a>
+      {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+      <div class="mt-8 flex items-center gap-3">
+        {% if page_obj.has_previous %}
+          <a class="px-3 py-1 border rounded"
+             href="?{% if q %}q={{q}}&{% endif %}{% if tag %}tag={{tag}}&{% endif %}{% if city %}city={{city}}&{% endif %}{% if date %}date={{date}}&{% endif %}page={{ page_obj.previous_page_number }}">Prev</a>
+        {% endif %}
+        <span class="text-sm">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+          <a class="px-3 py-1 border rounded"
+             href="?{% if q %}q={{q}}&{% endif %}{% if tag %}tag={{tag}}&{% endif %}{% if city %}city={{city}}&{% endif %}{% if date %}date={{date}}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <p class="text-slate-600">No classes match your filters.</p>
+  {% endif %}
+</section>
+
+{% endblock %}
