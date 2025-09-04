@@ -1,43 +1,52 @@
 import datetime as dt
-from typing import Iterable, Dict, List
+from typing import Iterable, Dict, List, Optional
 
 from django.db.models import Q
 from django.utils import timezone
+from collections import defaultdict
+from django.db.models import Prefetch
 from django.views.generic import ListView, DetailView
 
 from .models import ActivityClass, Tag, Location, ScheduleRule
 
 
-def occurrences_for_rules(rules: Iterable[ScheduleRule],
-                          days_ahead: int = 14,
-                          tz=None,
-                          from_dt=None) -> List[dt.datetime]:
+def occurrences_for_rules(
+    rules: Iterable["ScheduleRule"],
+    days_ahead: int = 14,
+    tz: Optional[dt.tzinfo] = None,
+    from_dt: Optional[dt.datetime] = None,
+) -> List[dt.datetime]:
     """
-    Expand weekly rules into concrete datetimes for the next N days.
-    Returns a sorted list (ascending).
+    Expand weekly rules into concrete datetimes for the next `days_ahead` days,
+    starting from `from_dt` (default: now). Returns a sorted list (ascending).
     """
     tz = tz or timezone.get_current_timezone()
-    today = (from_dt or timezone.now()).astimezone(tz)
-    start_date = today.date()
+    start_moment = (from_dt or timezone.now()).astimezone(tz)
+    start_date = start_moment.date()
+    results: List[dt.datetime] = []
+    by_weekday: dict[int, list] = defaultdict(list)
 
-    results = []
-    by_weekday = {}
+    # Pre-group rules by weekday (0=Mon..6=Sun)
     for r in rules:
-        by_weekday.setdefault(r.weekday, []).append(r)
+        by_weekday[r.weekday].append(r)
 
     for offset in range(days_ahead + 1):
-        d = start_date + dt.timedelta(days=offset)
-        wk = d.weekday()  # 0=Mon..6=Sun
+        day = start_date + dt.timedelta(days=offset)
+        wk = day.weekday()
         if wk not in by_weekday:
             continue
+
         for r in by_weekday[wk]:
-            # combine date + time in TZ
-            local_dt = tz.localize(dt.datetime.combine(d, r.time))
-            if local_dt >= today:
+            naive = dt.datetime.combine(day, r.time)
+            local_dt = timezone.make_aware(naive, tz)  # zoneinfo-safe
+
+            # Skip times earlier than the start moment (same-day guard)
+            if local_dt >= start_moment:
                 results.append(local_dt)
 
     results.sort()
     return results
+
 
 
 class ClassListView(ListView):
@@ -117,3 +126,5 @@ class ClassDetailView(DetailView):
         rules = self.object.schedulerule_set.all()
         ctx["upcoming"] = occurrences_for_rules(rules, days_ahead=28, tz=tz)[:10]
         return ctx
+
+
