@@ -1,9 +1,7 @@
 from django.urls import path
-from .views import ClassListView, ClassDetailView
-
-app_name = "catalog"
+from . import views
 
 urlpatterns = [
-    path("classes/", ClassListView.as_view(), name="class_list"),
-    path("classes/<slug:slug>/", ClassDetailView.as_view(), name="class_detail"),
+    path("classes/", views.ActivityClassList.as_view(), name="class-list"),
+    path("classes/<slug:slug>/", views.ActivityClassDetail.as_view(), name="class-detail"),
 ]

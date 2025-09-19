@@ -79,7 +79,7 @@ class ActivityClass(models.Model):
         return super().save(*args, **kwargs)
     
     def get_absolute_url(self):
-        return reverse("class_detail", args=[self.slug])
+        return reverse("class-detail", args=[self.slug])
 
     def __str__(self):
         return self.title

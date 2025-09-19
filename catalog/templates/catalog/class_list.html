@@ -12,7 +12,7 @@
     <select name="tag" class="border rounded px-3 py-2 w-full">
       <option value="">All tags</option>
       {% for t in all_tags %}
-        <option value="{{ t.slug }}" {% if tag == t.slug %}selected{% endif %}>{{ t.title }}</option>
+        <option value="{{ t.slug }}" {% if tag == t.slug %}selected{% endif %}>{{ t.name }}</option>
       {% endfor %}
     </select>
 
@@ -32,18 +32,18 @@
   {% if cards %}
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {% for c, next in cards %}
-        <a href="{% url 'catalog:class_detail' slug=c.slug %}"
+        <a href="{{ c.get_absolute_url }}"
            class="block rounded-xl border hover:shadow-md transition p-5 bg-white">
           <h3 class="font-bold text-xl">{{ c.title }}</h3>
           <p class="text-sm text-slate-600 mt-1">
             {{ c.location.city }}{% if c.location.address1 %}, {{ c.location.address1 }}{% endif %}
-            {% if c.coach %} • Coach: {{ c.coach.name }}{% endif %}
+            {% if c.coach %} • Coach: {{ c.coach.display_name }}{% endif %}
           </p>
 
           {% if c.tags.all %}
             <div class="flex flex-wrap gap-2 mt-3">
               {% for t in c.tags.all %}
-                <span class="text-xs bg-slate-100 px-2 py-1 rounded">{{ t.title }}</span>
+                <span class="text-xs bg-slate-100 px-2 py-1 rounded">{{ t.name }}</span>
               {% endfor %}
             </div>
           {% endif %}

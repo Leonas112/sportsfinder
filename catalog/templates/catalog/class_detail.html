@@ -1,76 +1,183 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ cls.title }} — SportsFinder{% endblock %}
 
 {% block content %}
-<section class="w-screen relative overflow-hidden">
-  <!-- hero image / color -->
-  <div class="relative before:absolute before:inset-0 before:bg-black/40">
-    <img src="https://picsum.photos/seed/picsum/1800/700"
-         class="w-full h-[56vh] object-cover"
-         alt="">
-    <div class="absolute inset-0 z-10 flex items-center">
-      <div class="max-w-5xl mx-auto px-6 md:px-8">
-        <span class="uppercase text-white/80 text-xs tracking-widest">CLASS</span>
-        <h1 class="mt-2 text-white font-extrabold text-4xl md:text-6xl">
-          {{ class_obj.title }}
-        </h1>
-        <p class="mt-4 max-w-3xl text-white/90">
-          {{ class_obj.description }}
-        </p>
+<div class="mx-auto max-w-6xl px-4 py-8 lg:px-6">
+  <!-- Breadcrumbs -->
+  <nav class="mb-6 text-sm text-gray-500" aria-label="Breadcrumb">
+    <a href="{% url 'home' %}" class="hover:underline">Home</a>
+    <span class="mx-2">›</span>
+    <a href="{% url 'class-list' %}" class="hover:underline">Classes</a>
+    <span class="mx-2">›</span>
+    <span class="text-gray-700">{{ cls.title }}</span>
+  </nav>
 
-        <div class="mt-6 flex gap-4 flex-wrap text-white/90">
-          {% if class_obj.coach %}
-            <span>Coach: <strong>{{ class_obj.coach.name }}</strong></span>
-          {% endif %}
-          {% if class_obj.location %}
-            <span>Location: <strong>{{ class_obj.location.city }}</strong></span>
-          {% endif %}
-          {% if class_obj.tags.all %}
-            <span>
-              Tags:
-              {% for t in class_obj.tags.all %}
-                <span class="inline-block px-2 py-0.5 text-xs rounded bg-white/10">{{ t.title }}</span>
-              {% empty %}
-                —
-              {% endfor %}
-            </span>
-          {% endif %}
-        </div>
-
-        <!-- Book button (will be wired when bookings are built) -->
-        <div class="mt-8">
-          <a href="#" class="inline-block text-white uppercase py-3 text-sm px-10 border border-white hover:bg-white/10">
-            Book this class
-          </a>
-        </div>
+  <!-- Gallery + Sidebar -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <!-- Media gallery -->
+    <div class="space-y-3 lg:col-span-2">
+      <div class="aspect-[16/9] w-full overflow-hidden rounded-2xl bg-gray-200">
+        <img src="{% static 'img/placeholders/studio-1.jpg' %}"
+             alt="{{ cls.title }} studio"
+             class="h-full w-full object-cover" />
+      </div>
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <img class="h-24 w-full rounded-xl object-cover" src="{% static 'img/placeholders/studio-2.jpg' %}" alt="" />
+        <img class="h-24 w-full rounded-xl object-cover" src="{% static 'img/placeholders/studio-3.jpg' %}" alt="" />
+        <img class="h-24 w-full rounded-xl object-cover" src="{% static 'img/placeholders/studio-4.jpg' %}" alt="" />
+        <img class="h-24 w-full rounded-xl object-cover" src="{% static 'img/placeholders/studio-5.jpg' %}" alt="" />
       </div>
     </div>
-  </div>
-</section>
 
-<!-- upcoming schedule -->
-<section class="py-12">
-  <div class="max-w-5xl mx-auto px-6 md:px-8">
-    <h2 class="font-bold text-2xl mb-4">Upcoming times</h2>
+    <!-- Sticky sidebar -->
+    <aside class="lg:col-span-1">
+      <div class="space-y-4 lg:sticky lg:top-6">
+        <div class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <p class="text-sm text-gray-500">
+            {% if cls.location %}
+              {{ cls.location.city }}{% if cls.location.country %}, {{ cls.location.country }}{% endif %}
+            {% else %}
+              Location TBA
+            {% endif %}
+          </p>
+          <p class="mt-1 text-sm text-gray-700">
+            {% if cls.location %}
+              {% if cls.location.address1 or cls.location.address2 %}
+                {{ cls.location.address1 }}{% if cls.location.address2 %}, {{ cls.location.address2 }}{% endif %}
+              {% else %}
+                Address unavailable
+              {% endif %}
+            {% else %}
+              Address unavailable
+            {% endif %}
+          </p>
+          <div class="mt-4 h-40 w-full overflow-hidden rounded-xl bg-gray-100">
+            <img src="{% static 'img/placeholders/map.jpg' %}" alt="Map preview" class="h-full w-full object-cover" />
+          </div>
+          <ul class="mt-4 space-y-2 text-sm text-indigo-600">
+            <li><a class="hover:underline" href="#" aria-disabled="true">Website (coming soon)</a></li>
+            <li><a class="hover:underline" href="#" aria-disabled="true">Instagram (coming soon)</a></li>
+            <li class="text-gray-500">Phone: unavailable</li>
+          </ul>
+        </div>
 
-    {% if upcoming %}
-      <ul class="space-y-3">
-        {% for dt, rule in upcoming %}
-          <li class="flex items-center justify-between rounded border border-gray-200 px-4 py-3">
-            <div>
-              <div class="font-semibold">
-                {{ dt|date:"D, M j" }} &middot; {{ dt|time:"H:i" }}
+        <div class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <h3 class="text-base font-semibold text-gray-900">Coach</h3>
+          {% if cls.coach %}
+            <div class="mt-3 flex items-center gap-3">
+              <div class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200 text-lg font-semibold text-gray-600">
+                {{ cls.coach.display_name|slice:":1"|default:"?" }}
               </div>
-              <div class="text-sm text-gray-600">
-                {{ class_obj.location.address1 }} {{ class_obj.location.city }}
+              <div>
+                <p class="font-medium text-gray-800">{{ cls.coach.display_name }}</p>
+                {% if cls.coach.user and cls.coach.user.email %}
+                  <p class="text-sm text-gray-500">{{ cls.coach.user.email }}</p>
+                {% endif %}
               </div>
             </div>
-            <a href="#" class="text-sky-700 hover:underline">Book</a>
+          {% else %}
+            <p class="mt-3 text-sm text-gray-500">Coach TBA</p>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Info card -->
+  <section class="mt-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">{{ cls.title }}</h1>
+        <p class="mt-1 text-sm text-gray-500">
+          {% if cls.location %}{{ cls.location.city }}{% endif %} •
+          Coach: {% if cls.coach %}<span class="text-gray-800">{{ cls.coach.display_name }}</span>{% else %}TBA{% endif %}
+        </p>
+      </div>
+      <button type="button"
+              class="inline-flex items-center justify-center rounded-full border border-indigo-600 px-5 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+              disabled>
+        Book session (coming soon)
+      </button>
+    </div>
+
+    <div class="mt-3 text-sm text-gray-600">
+      <span class="font-semibold text-gray-800">4.9</span>
+      <span>★★★★★</span>
+      <span class="text-gray-500">(500+)</span>
+      <span class="ml-2 text-indigo-600">Times may vary by timezone.</span>
+    </div>
+
+    {% with tags=cls.tags.all %}
+      {% if tags %}
+        <div class="mt-4 flex flex-wrap gap-2">
+          {% for tag in tags %}
+            <span class="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">#{{ tag.name }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if cls.description %}
+      <div class="prose prose-slate mt-4 max-w-none">
+        {{ cls.description|linebreaks }}
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Safety & cleanliness -->
+  <section class="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <h2 class="text-lg font-semibold text-gray-900">Safety &amp; cleanliness</h2>
+    <p class="mt-1 text-sm text-gray-500">Information provided by the studio.</p>
+    <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {% for label in "ABC" %}
+        <div class="flex items-start gap-3">
+          <div class="h-10 w-10 rounded-lg bg-gray-100"></div>
+          <div>
+            <p class="font-medium text-gray-800">Measure {{ forloop.counter }}</p>
+            <p class="text-sm text-gray-500">Short note about safety practice.</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Schedule -->
+  <section class="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <h2 class="text-lg font-semibold text-gray-900">Schedule</h2>
+      <form method="get" class="flex gap-2">
+        <input type="date"
+               name="start"
+               value="{{ request.GET.start }}"
+               class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring focus:ring-indigo-200/50" />
+        <button type="submit"
+                class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700">
+          Go
+        </button>
+      </form>
+    </div>
+
+    {% if upcoming_sessions %}
+      <ul class="mt-5 divide-y divide-gray-200">
+        {% for session in upcoming_sessions %}
+          <li class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-base font-medium text-gray-900">{{ session.start|date:"D, M j" }}</p>
+              <p class="text-sm text-gray-500">{{ session.start|time:"g:i A" }} – {{ session.end|time:"g:i A" }}</p>
+            </div>
+            <button type="button"
+                    class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    disabled>
+              Select
+            </button>
           </li>
         {% endfor %}
       </ul>
     {% else %}
-      <p class="text-gray-600">No upcoming times found.</p>
+      <p class="mt-4 text-sm text-gray-500">No upcoming sessions in the next two weeks.</p>
     {% endif %}
-  </div>
-</section>
+  </section>
+</div>
 {% endblock %}

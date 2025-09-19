@@ -1,13 +1,15 @@
 import datetime as dt
-from typing import Iterable, Dict, List, Optional
+import datetime
+from datetime import timedelta
+from typing import Iterable, List, Optional
 
 from django.db.models import Q
 from django.utils import timezone
 from collections import defaultdict
-from django.db.models import Prefetch
 from django.views.generic import ListView, DetailView
 
 from .models import ActivityClass, Tag, Location, ScheduleRule
+from .utils import expand_rules
 
 
 def occurrences_for_rules(
@@ -49,7 +51,7 @@ def occurrences_for_rules(
 
 
 
-class ClassListView(ListView):
+class ActivityClassList(ListView):
     model = ActivityClass
     template_name = "catalog/class_list.html"
     context_object_name = "classes"
@@ -58,7 +60,7 @@ class ClassListView(ListView):
     def get_queryset(self):
         qs = (ActivityClass.objects
               .select_related("location", "coach")
-              .prefetch_related("tags", "schedulerule_set")
+              .prefetch_related("tags", "weekly_rules")
               .order_by("title"))
 
         q = self.request.GET.get("q", "").strip()
@@ -94,7 +96,7 @@ class ClassListView(ListView):
         ctx["date"] = self.request.GET.get("date", "")
 
         # Filter options
-        ctx["all_tags"] = Tag.objects.order_by("title")
+        ctx["all_tags"] = Tag.objects.order_by("name")
         ctx["all_cities"] = (Location.objects
                              .values_list("city", flat=True)
                              .distinct().order_by("city"))
@@ -103,7 +105,7 @@ class ClassListView(ListView):
         cards = []
         tz = timezone.get_current_timezone()
         for obj in ctx["classes"]:
-            rules = obj.schedulerule_set.all()
+            rules = obj.weekly_rules.all()
             next_times = occurrences_for_rules(rules, days_ahead=14, tz=tz)[:3]
             cards.append((obj, next_times))
 
@@ -112,19 +114,29 @@ class ClassListView(ListView):
 
 
 
-class ClassDetailView(DetailView):
+class ActivityClassDetail(DetailView):
     model = ActivityClass
     slug_field = "slug"
     context_object_name = "cls"
     template_name = "catalog/class_detail.html"
-    
+
+    def get_queryset(self):
+        return (ActivityClass.objects
+                .select_related("location", "coach")
+                .prefetch_related("tags", "weekly_rules"))
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        tz = timezone.get_current_timezone()
-        # Show the next 10 upcoming sessions for this class
-        rules = self.object.schedulerule_set.all()
-        ctx["upcoming"] = occurrences_for_rules(rules, days_ahead=28, tz=tz)[:10]
+        start_param = self.request.GET.get("start")
+        if start_param:
+            try:
+                y, m, d = map(int, start_param.split("-"))
+                start_dt = timezone.make_aware(datetime.datetime(y, m, d))
+            except Exception:
+                start_dt = timezone.now()
+        else:
+            start_dt = timezone.now()
+
+        end_dt = start_dt + timedelta(days=14)
+        ctx["upcoming_sessions"] = expand_rules(self.object, start_dt, end_dt)[:10]
         return ctx
-
-
