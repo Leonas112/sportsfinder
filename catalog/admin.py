@@ -1,7 +1,7 @@
 # activities/admin.py
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Location, Coach, Tag, ActivityClass, ScheduleRule
+from .models import Location, Coach, Tag, ActivityClass, ScheduleRule, Booking
 
 class ScheduleRuleInline(admin.TabularInline):
     model = ScheduleRule
@@ -26,3 +26,21 @@ admin.site.register(Location)
 admin.site.register(Coach)
 admin.site.register(Tag)
 admin.site.register(ScheduleRule)
+
+
+@admin.register(Booking)
+class BookingAdmin(admin.ModelAdmin):
+    list_display = ("user", "activity_class", "start", "end", "status")
+    list_filter = (
+        "activity_class",
+        "user",
+        "status",
+        ("start", admin.DateFieldListFilter),
+    )
+    search_fields = (
+        "user__username",
+        "user__email",
+        "activity_class__title",
+    )
+    ordering = ("-start",)
+    list_select_related = ("user", "activity_class")

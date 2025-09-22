@@ -167,11 +167,16 @@
               <p class="text-base font-medium text-gray-900">{{ session.start|date:"D, M j" }}</p>
               <p class="text-sm text-gray-500">{{ session.start|time:"g:i A" }} – {{ session.end|time:"g:i A" }}</p>
             </div>
-            <button type="button"
-                    class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    disabled>
-              Select
-            </button>
+            <form method="post"
+                  action="{% url 'class-book' cls.slug %}"
+                  class="sm:shrink-0">
+              {% csrf_token %}
+              <input type="hidden" name="token" value="{{ session.token }}" />
+              <button type="submit"
+                      class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Select
+              </button>
+            </form>
           </li>
         {% endfor %}
       </ul>

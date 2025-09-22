@@ -3,13 +3,16 @@ import datetime
 from datetime import timedelta
 from typing import Iterable, List, Optional
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from collections import defaultdict
 from django.views.generic import ListView, DetailView
 
-from .models import ActivityClass, Tag, Location, ScheduleRule
-from .utils import expand_rules
+from .models import ActivityClass, Booking, Tag, Location, ScheduleRule
+from .utils import decode_occurrence_token, expand_rules, make_occurrence_token
 
 
 def occurrences_for_rules(
@@ -138,5 +141,56 @@ class ActivityClassDetail(DetailView):
             start_dt = timezone.now()
 
         end_dt = start_dt + timedelta(days=14)
-        ctx["upcoming_sessions"] = expand_rules(self.object, start_dt, end_dt)[:10]
+        sessions = expand_rules(self.object, start_dt, end_dt)[:10]
+        for session in sessions:
+            session["token"] = make_occurrence_token(
+                self.object.pk,
+                session["start"],
+                session["end"],
+            )
+        ctx["upcoming_sessions"] = sessions
         return ctx
+
+
+GRACE_PERIOD = dt.timedelta(minutes=5)
+
+
+@login_required
+def book_session(request, slug):
+    activity_class = get_object_or_404(ActivityClass, slug=slug)
+
+    if request.method != "POST":
+        return redirect(activity_class.get_absolute_url())
+
+    token = request.POST.get("token", "")
+    try:
+        decoded_class, start_dt, end_dt = decode_occurrence_token(token)
+        if decoded_class.pk != activity_class.pk:
+            raise ValueError("Token does not match class")
+    except Exception:
+        messages.error(request, "Invalid or expired session.")
+        return redirect(activity_class.get_absolute_url())
+
+    now = timezone.now() - GRACE_PERIOD
+    if start_dt < now:
+        messages.error(request, "This session has already started.")
+        return redirect(activity_class.get_absolute_url())
+
+    already_booked = Booking.objects.filter(
+        user=request.user,
+        activity_class=activity_class,
+        start=start_dt,
+    ).exists()
+
+    if already_booked:
+        messages.info(request, "You already booked this session.")
+        return redirect(activity_class.get_absolute_url())
+
+    Booking.objects.create(
+        user=request.user,
+        activity_class=activity_class,
+        start=start_dt,
+        end=end_dt,
+    )
+    messages.success(request, "Booking confirmed!")
+    return redirect(activity_class.get_absolute_url())

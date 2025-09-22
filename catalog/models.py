@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import F
 from django.core.exceptions import ValidationError
 from datetime import date, timedelta
 from django.utils.text import slugify
@@ -20,12 +21,14 @@ class Location(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             # Prefer a compact slug based on address/city
-            base = self.name or f"{self.address1}-{self.city}"
+            name = getattr(self, "name", "")
+            base = name or f"{self.address1}-{self.city}"
             self.slug = slugify(base)[:150]
         return super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name or f"{self.address1}, {self.city}"
+        name = getattr(self, "name", "")
+        return name or f"{self.address1}, {self.city}"
     
 class Coach(models.Model):
     # Either link to a real user, or just type a name
@@ -124,3 +127,56 @@ class ScheduleRule(models.Model):
             current += timedelta(weeks=self.interval)
 
         return generated
+
+
+class Booking(models.Model):
+    STATUS_CONFIRMED = "confirmed"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_CHOICES = (
+        (STATUS_CONFIRMED, "Confirmed"),
+        (STATUS_CANCELLED, "Cancelled"),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="bookings",
+    )
+    activity_class = models.ForeignKey(
+        ActivityClass,
+        on_delete=models.CASCADE,
+        related_name="bookings",
+    )
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_CONFIRMED,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-start",)
+        indexes = [
+            models.Index(fields=("activity_class", "start")),
+            models.Index(fields=("user", "start")),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "activity_class", "start"),
+                name="booking_unique_user_class_start",
+            ),
+            models.CheckConstraint(
+                check=models.Q(end__gt=F("start")),
+                name="booking_end_after_start",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.start and self.end and self.start >= self.end:
+            raise ValidationError({"end": "End time must be after start."})
+
+    def __str__(self):
+        return f"{self.user} → {self.activity_class} @ {self.start:%Y-%m-%d %H:%M}"

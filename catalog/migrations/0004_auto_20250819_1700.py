@@ -3,11 +3,18 @@
 from django.db import migrations
 
 
+def forwards(apps, schema_editor):
+    tables = schema_editor.connection.introspection.table_names()
+    if "catalog_scheduleslot" in tables and "catalog_schedulerule" not in tables:
+        schema_editor.execute("ALTER TABLE catalog_scheduleslot RENAME TO catalog_schedulerule;")
+
+
+def backwards(apps, schema_editor):
+    tables = schema_editor.connection.introspection.table_names()
+    if "catalog_schedulerule" in tables and "catalog_scheduleslot" not in tables:
+        schema_editor.execute("ALTER TABLE catalog_schedulerule RENAME TO catalog_scheduleslot;")
+
+
 class Migration(migrations.Migration):
     dependencies = [("catalog", "0003_alter_schedulerule_options_remove_coach_bio_and_more")]
-    operations = [
-        migrations.RunSQL(
-            "ALTER TABLE catalog_scheduleslot RENAME TO catalog_schedulerule;",
-            "ALTER TABLE catalog_schedulerule RENAME TO catalog_scheduleslot;",
-        )
-    ]
+    operations = [migrations.RunPython(forwards, backwards)]
